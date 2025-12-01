@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+.text {
+    font-family: Arial;
+    background: rebeccapurple;
+}
