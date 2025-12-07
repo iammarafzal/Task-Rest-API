@@ -1,16 +1,20 @@
 <?php
 
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TaskController;
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
-// 1. GET Deleted Tasks
+// Task Routes
 Route::get('tasks/deleted', [TaskController::class, 'deleted']);
-
-// 2. Restore Task
 Route::post('tasks/{id}/restore', [TaskController::class, 'restore']);
-
-// 3. Update Reminder
 Route::patch('tasks/{task}/reminder', [TaskController::class, 'updateReminder']);
-
-// 4. Standard Routes
 Route::apiResource('tasks', TaskController::class);
+
+// Product Routes 
+// Route::get('/product/create', [ProductController::class, 'create'])->name('product.create');
+// Route::post('products', ProductController::class, 'store')->name('product.store');
+// Route::get('product/{id}/edit', [ProductController::class, 'edit'])->name('product.edit');
+// Route::put('product/{id}', [ProductController::class, 'update'])->name('product.update');
+// Route::delete('product/{id}', [ProductController::class, 'destroy'])->name('product.destroy');
+Route::apiResource('/products', ProductController::class);

@@ -2,121 +2,135 @@
 
 namespace App\Http\Controllers; 
 
-use Illuminate\Http\Request;  //  imports the Request class from the Illuminate\Http namespace
-
-use Illuminate\Support\Facades\Validator; //imports the Validator facade, which provides a simple interface for validating data in Laravel.
-
-use App\Models\Product;  // imports the Product model from the App\Models namespace.
+use Illuminate\Http\Request; 
+use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 
 
 class ProductController extends Controller
 {
-    //Method for showing product page
+    // GET /api/products
     public function index()
     {
         $products = Product::all();
-        return view('product.list', compact('products'));
+        return response()->json([
+            'status' => 'true',
+            'message' => 'Products retrieved successfully',
+            'data' => $products
+        ], 200);
     }
 
-    //Method for creating product
-    public function create()
-    {
-        return view('product.create');
-    }
-
-    // Method for storing product in DB
+    // POST /api/products
     public function store(Request $request)
     {
-        // Validate the incoming data
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-    
-        // Create a new product instance and assign validated fields directly
+
         $product = new Product();
-        $product->name = $validated['name'];
-        $product->price = $validated['price'];
-        $product->description = $validated['description'] ?? null;  // Avoid potential undefined index error
-    
-        // Handle the image upload (if exists)
+        $product->name = $request->name;
+        $product->price = $request->price;
+        $product->description = $request->description;
+
         if ($request->hasFile('image')) {
             // Save the image in the 'public/images' directory
             $imagePath = $request->file('image')->store('images', 'public');
-            $product->image = $imagePath;
+            $product->image = asset('storage/' . $imagePath); // Store the image path
         }
-    
-        // Save the product to the database
         $product->save();
-    
-        // Redirect with success message
-        return redirect()->route('product.index')->with('success', 'Product created successfully');
+
+        return response()->json([
+            'status' => 'true',
+            'message' => 'Product created successfully',
+            'data' => $product
+        ], 201
+        );
     }
 
-    //Method for editing product
-    public function edit($id)
-    {   
+    // GET /api/products/{id}
+    public function show($id){
         $product = Product::find($id);
-        return view('product.edit', compact('product'));
+        if (!$product) {
+            return response()->json([
+                'status' => 'false',
+                'message' => 'Product not found'
+            ], 404);
+        }
+        return response()->json([
+            'status' => 'true',
+            'message' => 'Product retrieved successfully',
+            'data' => $product
+        ], 200);
     }
-    
- // Handle the form submission and update the product
-    public function update($id, Request $request)
+
+    // PUT /api/products/{id}
+    public function update(Request $request, $id)
     {
         $product = Product::find($id);
+        if (!$product) {
+            return response()->json([
+                'status' => 'false',
+                'message' => 'Product not found'
+            ], 404);
+        }
 
-        $rules = [
+        $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'description' => 'nullable|string',
-        ];
-
-        if ($request->hasFile('image')) {
-            $rules['image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'; 
-        }
-
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
 
         $product->name = $request->name;
         $product->price = $request->price;
         $product->description = $request->description;
+
+        if ($request->hasFile('image')){
+            // Delete old image if exists
+            if ($product->image){
+                // Extract relative path from URL to delete file
+                $relativePath = str_replace(asset('storage/'), '', $product->image);
+                if (Storage::disk('public')->exists($relativePath)){
+                    Storage::disk('public')->delete($relativePath);
+                }
+            }
+            $path = $request->file('image')->store('images', 'public');
+            $product->image = asset('storage/' . $path);
+        }
         $product->save();
 
-        // Handle the image upload (if a new image is uploaded)
-    if ($request->hasFile('image')) {
-        // Delete the old image (if it exists)
-        if ($product->image && file_exists(public_path('storage/' . $product->image))) {
-            unlink(public_path('storage/' . $product->image));  // Delete old image file
-        }
-
-        // Save the new image in the 'public/images' directory
-        $imagePath = $request->file('image')->store('images', 'public');
-        $product->image = $imagePath; // Update the product's image path
+        return response()->json([
+            'status' => true,
+            'message' => 'Product updated successfully',
+            'data' => $product
+        ], 200);
     }
 
-    // Save the updated product to the database
-    $product->save();
-        return redirect()->route('product.index')->with('success', 'Product updated successfully');
-        
-    }
+    // DELETE /api/products/{id}
+    public function destroy($id){
+        $product = Product::find($id);
 
-    //Method for deleting product
-    public function destroy($id)
-    {
-        // Find the product by ID or fail with 404 if not found
-        $product = Product::findOrFail($id);
-    
-        // Delete the old image (if it exists)
-        if ($product->image && file_exists(public_path('storage/' . $product->image))) {
-            unlink(public_path('storage/' . $product->image));  // Delete old image file
+        if (!$product){
+            return response()->json([
+                'status' => false,
+                'message' => 'Product not found'
+            ], 404);
         }
-    
-        // Delete the product from the database
+
+        if ($product->image){
+            $relativePath = str_replace(asset('storage/'), '', $product->image);
+            if (Storage::disk('public')->exists($relativePath)){
+                Storage::disk('public')->delete($relativePath);
+            }
+        }
         $product->delete();
-    
-        // Redirect back with success message
-        return redirect()->route('product.index')->with('success', 'Product deleted successfully');
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product deleted successfully'
+        ], 200);
     }
-    
 }
