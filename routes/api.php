@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\UserController;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
@@ -18,3 +19,9 @@ Route::apiResource('tasks', TaskController::class);
 // Route::put('product/{id}', [ProductController::class, 'update'])->name('product.update');
 // Route::delete('product/{id}', [ProductController::class, 'destroy'])->name('product.destroy');
 Route::apiResource('/products', ProductController::class);
+
+// 1. Route to CREATE the data
+Route::post('/create-user', [UserController::class, 'store']);
+
+// 2. Route to VIEW the data (e.g., /user/1)
+Route::get('/user/{id}', [UserController::class, 'show']);

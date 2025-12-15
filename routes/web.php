@@ -5,6 +5,7 @@ use App\Models\Profile;
 use App\Models\Posts;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
 
 Route:: resource('product', ProductController::class);
 
@@ -33,35 +34,6 @@ Route::get('/edit-product/{id}', function ($id){
     return view('product.edit', ['id' => $id]);
 });
 
-
-// Route Users 
-Route::get('create-user', function (){
-    $user = User::create([
-        'name' => 'Ammar Afzal',
-        'email' => 'ammarafzal@gmail.com',
-        'password' => bcrypt('password'),
-    ]);
-
-    $profile = Profile::create([
-        'user_id' => $user->id,
-        'phone' => '1234567890',
-        'address' => 'Street 1, Islamabad',
-        'city' => 'Islamabad',
-    ]);
-
-    $post1 = Posts::create([
-        'user_id' => $user->id,
-        'title' => 'My First Post',
-        'body' => 'This is the body of my first post.',
-    ]);
-
-    Posts::class::create([
-        'user_id' => $user->id,
-        'title' => 'My Second Post',
-        'body' => 'This is the body of my second post.',
-    ]);
-    return 'User and Profile Created';
-});
 
 
 ?>
